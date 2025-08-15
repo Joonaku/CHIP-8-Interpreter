@@ -7,7 +7,7 @@ upscale = 15
 display = [[0 for _ in range(64)] for _ in range(32)]
 running = advance_pc = True
 rom_finished = False
-pygame.display.set_caption("8-Chip emulator")
+pygame.display.set_caption("Chip-8 emulator")
 
 # Set up specs
 memory = bytearray(4096)
@@ -32,10 +32,12 @@ keymap = {
 # (Requires some improvements)
 files = [f for f in os.listdir() if os.path.isfile(f)]
 k = 1
-for i in range(len(files)):
-    if files[i].endswith(".ch8"):
-        print(k,": ", files[i], sep="")
-        k += 1
+for i in files:
+    if not i.endswith(".ch8"):
+        files.remove(i)
+for i in files:
+    print(k,": ", i, sep="")
+    k += 1
 selected_rom = int(input("Choose a ROM: "))
 
 # Loading up the rom
@@ -46,7 +48,7 @@ def load_rom(path):
         memory[0x200 + i] = rom[i]
     return len(rom)
 
-rom_size = load_rom(files[selected_rom])
+rom_size = load_rom(files[selected_rom-1])
 rom_end = 0x200 + rom_size
 screen = pygame.display.set_mode((64 * upscale, 32 * upscale))
 
@@ -173,7 +175,7 @@ while running:
             case 0xD000:
                 X = V[(opcode & 0x0F00) >> 8]
                 Y = V[(opcode & 0x00F0) >> 4]
-                V[0xF] = 0
+                V[15] = 0
                 # Loading sprite data from memory
                 for i in range(opcode & 0x000F):
                     sprite_byte = memory[I + i]
@@ -181,10 +183,9 @@ while running:
                         sprite_bit = (sprite_byte >> (7 - bit)) & 1
                         xc = (X + bit) % 64
                         yc = (Y + i) % 32
-
                         if sprite_bit == 1:
                             if display[yc][xc] == 1:
-                                V[0xF] = 1
+                                V[15] = 1
                             display[(yc)][(xc)] ^= sprite_bit
                 screen.fill((0,0,0))
                 # Drawing pixels to the screen
